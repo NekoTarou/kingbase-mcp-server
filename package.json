@@ -17,12 +17,11 @@
     "start": "node dist/index.js",
     "start:http": "TRANSPORT=http node dist/index.js",
     "dev": "npx tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "npm run docs:generate && tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "docs:generate": "npx tsx scripts/generate-docs.ts",
-    "prebuild": "npm run docs:generate",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
