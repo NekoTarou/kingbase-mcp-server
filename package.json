@@ -1,0 +1,64 @@
+{
+  "name": "kingbase-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for KingBase (PostgreSQL-compatible) database operations",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "kingbase-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "TOOLS.md"
+  ],
+  "scripts": {
+    "start": "node dist/index.js",
+    "start:http": "TRANSPORT=http node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "docs:generate": "tsx scripts/generate-docs.ts",
+    "prebuild": "npm run docs:generate",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "kingbase",
+    "database",
+    "postgresql",
+    "model-context-protocol",
+    "ai",
+    "llm"
+  ],
+  "author": "NekoTarou",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NekoTarou/kingbase-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NekoTarou/kingbase-mcp-server/issues"
+  },
+  "homepage": "https://github.com/NekoTarou/kingbase-mcp-server#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "pg": "^8.13.1",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
