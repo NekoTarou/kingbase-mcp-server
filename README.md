@@ -37,45 +37,45 @@ kingbase-mcp-server
 
 ## 功能
 
-| Tool | 说明 | 类型 |
-|------|------|------|
-| `kb_query` | 执行只读查询 (SELECT/WITH/SHOW) | 只读 |
-| `kb_execute` | 执行 DML (INSERT/UPDATE/DELETE) | 读写 |
-| `kb_execute_ddl` | 执行 DDL (CREATE/ALTER/DROP) | 读写 |
-| `kb_list_schemas` | 列出所有 schema | 只读 |
-| `kb_list_tables` | 列出表和视图 | 只读 |
-| `kb_describe_table` | 查看表结构（列、类型、约束、注释） | 只读 |
-| `kb_list_indexes` | 查看索引信息 | 只读 |
-| `kb_list_constraints` | 查看约束信息 | 只读 |
-| `kb_explain` | 查看执行计划 (EXPLAIN) | 只读 |
-| `kb_table_data` | 预览表数据（带分页和过滤） | 只读 |
-| `kb_table_stats` | 查看表统计信息（大小、行数等） | 只读 |
+| Tool                  | 说明                               | 类型 |
+| --------------------- | ---------------------------------- | ---- |
+| `kb_query`            | 执行只读查询 (SELECT/WITH/SHOW)    | 只读 |
+| `kb_execute`          | 执行 DML (INSERT/UPDATE/DELETE)    | 读写 |
+| `kb_execute_ddl`      | 执行 DDL (CREATE/ALTER/DROP)       | 读写 |
+| `kb_list_schemas`     | 列出所有 schema                    | 只读 |
+| `kb_list_tables`      | 列出表和视图                       | 只读 |
+| `kb_describe_table`   | 查看表结构（列、类型、约束、注释） | 只读 |
+| `kb_list_indexes`     | 查看索引信息                       | 只读 |
+| `kb_list_constraints` | 查看约束信息                       | 只读 |
+| `kb_explain`          | 查看执行计划 (EXPLAIN)             | 只读 |
+| `kb_table_data`       | 预览表数据（带分页和过滤）         | 只读 |
+| `kb_table_stats`      | 查看表统计信息（大小、行数等）     | 只读 |
 
 ## 环境变量
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `DB_HOST` | 数据库主机 | `localhost` |
-| `DB_PORT` | 数据库端口 | `54321` |
-| `DB_USER` | 用户名 | `system` |
-| `DB_PASSWORD` | 密码 | (空) |
-| `DB_NAME` | 数据库名 | `kingbase` |
-| `DB_SCHEMA` | 默认 schema | `public` |
-| `TRANSPORT` | 传输模式：`stdio` 或 `http` | `stdio` |
-| `MCP_PORT` | HTTP 模式监听端口 | `3000` |
-| `MCP_HOST` | HTTP 模式监听地址 | `0.0.0.0` |
-| `ACCESS_MODE` | 权限模式（见下方说明） | `readonly` |
+| 变量          | 说明                        | 默认值      |
+| ------------- | --------------------------- | ----------- |
+| `DB_HOST`     | 数据库主机                  | `localhost` |
+| `DB_PORT`     | 数据库端口                  | `54321`     |
+| `DB_USER`     | 用户名                      | `system`    |
+| `DB_PASSWORD` | 密码                        | (空)        |
+| `DB_NAME`     | 数据库名                    | `kingbase`  |
+| `DB_SCHEMA`   | 默认 schema                 | `public`    |
+| `TRANSPORT`   | 传输模式：`stdio` 或 `http` | `stdio`     |
+| `MCP_PORT`    | HTTP 模式监听端口           | `3000`      |
+| `MCP_HOST`    | HTTP 模式监听地址           | `0.0.0.0`   |
+| `ACCESS_MODE` | 权限模式（见下方说明）      | `readonly`  |
 
 ## 权限模式
 
 通过 `ACCESS_MODE` 环境变量控制数据库操作权限，分为 4 个递增级别：
 
-| 级别 | 值 | 允许的操作 |
-|------|------|-----------|
-| 只读 | `readonly`（默认） | SELECT 查询、查看 schema/表结构/索引/约束/统计/执行计划 |
-| 允许修改 | `readwrite` | 只读 + INSERT / UPDATE |
-| 允许删除 | `full` | 读写 + DELETE |
-| 管理员 | `admin` | 完全权限 + DDL（CREATE / ALTER / DROP / TRUNCATE） |
+| 级别     | 值                 | 允许的操作                                              |
+| -------- | ------------------ | ------------------------------------------------------- |
+| 只读     | `readonly`（默认） | SELECT 查询、查看 schema/表结构/索引/约束/统计/执行计划 |
+| 允许修改 | `readwrite`        | 只读 + INSERT / UPDATE                                  |
+| 允许删除 | `full`             | 读写 + DELETE                                           |
+| 管理员   | `admin`            | 完全权限 + DDL（CREATE / ALTER / DROP / TRUNCATE）      |
 
 **默认为 `readonly`（只读模式）**，防止误操作。根据实际需要调整。
 
@@ -134,7 +134,7 @@ curl -X POST http://localhost:3000/mcp \
 
 ### stdio 模式（推荐）
 
-编辑 `~/.claude/settings.json`，添加：
+编辑 `~/.claude.json`，在对应的空间下添加，或者在当前目录中创建`.mcp.json`文件，添加如下内容：
 
 ```json
 {
