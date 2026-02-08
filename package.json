@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/NekoTarou/kingbase-mcp-server#readme",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
