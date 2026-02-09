@@ -1,5 +1,11 @@
 # KingBase MCP Server
 
+[![License](https://img.shields.io/github/license/NekoTarou/kingbase-mcp-server.svg)](https://github.com/NekoTarou/kingbase-mcp-server/blob/main/LICENSE)
+[![Build & Test](https://github.com/NekoTarou/kingbase-mcp-server/actions/workflows/publish.yml/badge.svg)](https://github.com/NekoTarou/kingbase-mcp-server/actions/workflows/publish.yml)
+[![npm version](https://img.shields.io/npm/v/kingbase-mcp-server.svg)](https://www.npmjs.com/package/kingbase-mcp-server)
+[![npm downloads](https://img.shields.io/npm/dm/kingbase-mcp-server.svg)](https://www.npmjs.com/package/kingbase-mcp-server)
+[![Node.js Version](https://img.shields.io/node/v/kingbase-mcp-server.svg)](https://nodejs.org)
+
 [English](#english) | 中文
 
 直连 [KingBase](https://www.kingbase.com.cn/)（PostgreSQL 兼容）数据库的 MCP Server，让 AI 助手（Claude 等）能够直接查询和管理 KingBase 数据库。
