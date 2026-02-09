@@ -13,6 +13,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import express, { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 import pg from "pg";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -146,10 +147,13 @@ async function executeQuery(
 // MCP Server factory
 // ---------------------------------------------------------------------------
 
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
+
 function createServer(): McpServer {
   const server = new McpServer({
     name: "kingbase-mcp-server",
-    version: "1.0.0",
+    version,
   });
 
   registerTools(server);
