@@ -5,6 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/kingbase-mcp-server.svg)](https://www.npmjs.com/package/kingbase-mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/kingbase-mcp-server.svg)](https://www.npmjs.com/package/kingbase-mcp-server)
 [![Node.js Version](https://img.shields.io/node/v/kingbase-mcp-server.svg)](https://nodejs.org)
+[![MCP Badge](https://lobehub.com/badge/mcp/nekotarou-kingbase-mcp-server?style=plastic)](https://lobehub.com/mcp/nekotarou-kingbase-mcp-server)
 
 [English](#english) | 中文
 
