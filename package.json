@@ -1,6 +1,6 @@
 {
   "name": "kingbase-mcp-server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MCP server for KingBase (PostgreSQL-compatible) database operations",
   "type": "module",
   "main": "dist/index.js",
