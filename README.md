@@ -58,6 +58,20 @@ kingbase-mcp-server
 | `kb_table_data`       | 预览表数据（带分页和过滤）         | 只读 |
 | `kb_table_stats`      | 查看表统计信息（大小、行数等）     | 只读 |
 
+### 提示词 (Prompts)
+
+| Prompt               | 说明                                  |
+| -------------------- | ------------------------------------- |
+| `kb_query_prompt`    | 查询助手：描述需求，自动构造 SQL 查询 |
+| `kb_schema_overview` | Schema 概览：获取数据库结构的全面分析 |
+
+### 资源 (Resources)
+
+| URI                 | 说明                                       |
+| ------------------- | ------------------------------------------ |
+| `kingbase://config` | 当前数据库连接配置（不含密码等敏感信息）   |
+| `kingbase://status` | 服务器运行状态（版本、连接状态、运行时间） |
+
 ## 环境变量
 
 | 变量          | 说明                        | 默认值      |
@@ -345,6 +359,8 @@ MCP (Model Context Protocol) server for [KingBase](https://www.kingbase.com.cn/)
 ### Features
 
 - 11 database tools: query, DML, DDL, schema inspection, statistics
+- 2 prompts: query helper, schema overview
+- 2 resources: database config, server status
 - Two transport modes: stdio (local) and Streamable HTTP (remote)
 - Fine-grained access control: `readonly` / `readwrite` / `full` / `admin`
 - Two-phase confirmation for write operations

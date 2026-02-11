@@ -157,6 +157,8 @@ function createServer(): McpServer {
   });
 
   registerTools(server);
+  registerPrompts(server);
+  registerResources(server);
   return server;
 }
 
@@ -1185,6 +1187,109 @@ Returns:
 } // end registerTools
 
 // ---------------------------------------------------------------------------
+// Prompts
+// ---------------------------------------------------------------------------
+
+function registerPrompts(server: McpServer): void {
+  server.registerPrompt("kb_query_prompt", {
+    title: "Query Helper",
+    description: "Help construct a SQL query for KingBase database. Describe what data you want to retrieve and get a properly formatted SQL query.",
+    argsSchema: {
+      description: z.string().describe("Describe what data you want to query, e.g. 'find all users created in the last 7 days'"),
+      table: z.string().optional().describe("Optional: specific table name to query from"),
+    },
+  }, async (args) => {
+    const tableHint = args.table ? `\nTarget table: ${args.table}` : "";
+    return {
+      messages: [{
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `You are a KingBase (PostgreSQL-compatible) database expert. Help me construct a SQL query.\n\nRequest: ${args.description}${tableHint}\n\nPlease:\n1. Write the SQL query\n2. Explain what it does\n3. Use the kb_query tool to execute it\n\nRemember:\n- Use parameterized queries ($1, $2, ...) for user-provided values\n- The default schema is '${getDefaultSchema()}'\n- Only SELECT/WITH/SHOW statements are allowed for kb_query`,
+        },
+      }],
+    };
+  });
+
+  server.registerPrompt("kb_schema_overview", {
+    title: "Schema Overview",
+    description: "Get a comprehensive overview of the database schema structure including tables, columns, indexes and constraints.",
+    argsSchema: {
+      schema: z.string().optional().describe("Schema name to explore (default: configured DB_SCHEMA or 'public')"),
+    },
+  }, async (args) => {
+    const schema = args.schema || getDefaultSchema();
+    return {
+      messages: [{
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Please provide a comprehensive overview of the database schema '${schema}'.\n\nSteps:\n1. Use kb_list_tables to list all tables and views in the '${schema}' schema\n2. For each table, use kb_describe_table to show its structure\n3. Use kb_list_indexes and kb_list_constraints to show indexes and constraints\n4. Summarize the schema with a clear overview of the database structure and relationships`,
+        },
+      }],
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------
+
+function registerResources(server: McpServer): void {
+  server.registerResource("Database Config", "kingbase://config", {
+    description: "Current KingBase database connection configuration (sensitive values are masked)",
+    mimeType: "application/json",
+  }, async () => {
+    const config = {
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "54321", 10),
+      user: process.env.DB_USER || "system",
+      database: process.env.DB_NAME || "kingbase",
+      schema: getDefaultSchema(),
+      accessMode: getAccessMode(),
+      transport: (process.env.TRANSPORT || "stdio").toLowerCase(),
+    };
+    return {
+      contents: [{
+        uri: "kingbase://config",
+        mimeType: "application/json",
+        text: JSON.stringify(config, null, 2),
+      }],
+    };
+  });
+
+  server.registerResource("Server Status", "kingbase://status", {
+    description: "Current KingBase MCP server runtime status",
+    mimeType: "application/json",
+  }, async () => {
+    let dbConnected = false;
+    try {
+      const client = await pool.connect();
+      client.release();
+      dbConnected = true;
+    } catch {
+      // ignore
+    }
+    const status = {
+      version,
+      uptime: process.uptime(),
+      dbConnected,
+      accessMode: getAccessMode(),
+      defaultSchema: getDefaultSchema(),
+      toolCount: TOOL_REGISTRY.size,
+      timestamp: new Date().toISOString(),
+    };
+    return {
+      contents: [{
+        uri: "kingbase://status",
+        mimeType: "application/json",
+        text: JSON.stringify(status, null, 2),
+      }],
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -1199,7 +1304,7 @@ async function main(): Promise<void> {
 
   pool = createPool();
 
-  // Verify connection
+  // Verify connection (non-blocking: server starts even if DB is unavailable)
   try {
     const client = await pool.connect();
     const versionResult = await client.query("SELECT version()");
@@ -1210,12 +1315,14 @@ async function main(): Promise<void> {
     client.release();
   } catch (error) {
     console.error(
-      `Failed to connect to database: ${error instanceof Error ? error.message : error}`
+      `WARNING: Failed to connect to database: ${error instanceof Error ? error.message : error}`
+    );
+    console.error(
+      "The server will start but database operations will fail until a valid connection is available."
     );
     console.error(
       "Please check your DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME environment variables."
     );
-    process.exit(1);
   }
 
   const transportMode = (process.env.TRANSPORT || "stdio").toLowerCase();
