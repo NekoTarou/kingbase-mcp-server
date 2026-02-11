@@ -100,14 +100,20 @@ kingbase-mcp-server
 
 **默认为 `readonly`（只读模式）**，防止误操作。根据实际需要调整。
 
-### 二次确认机制
+### 安全确认机制
 
-`kb_execute`（DML）和 `kb_execute_ddl`（DDL）工具内置二次确认：
+`kb_execute`（DML）和 `kb_execute_ddl`（DDL）工具内置安全确认机制，确保写操作必须经过用户明确确认：
+
+#### 方式一：MCP Elicitation（推荐）
+
+当 MCP 客户端支持 [Elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation) 时，服务端会在协议层面**阻塞等待用户确认**——客户端弹出确认对话框，用户必须明确点击确认/拒绝后操作才会继续，AI 助手无法绕过此确认流程。
+
+#### 方式二：两步确认（回退方案）
+
+当客户端不支持 Elicitation 时，自动回退到参数确认方式：
 
 1. **首次调用**（不传 `confirmed` 或 `confirmed: false`）→ 不执行 SQL，返回操作预览和确认提示
 2. **确认调用**（`confirmed: true`）→ 真正执行 SQL
-
-这确保 LLM 在执行写操作前必须向用户确认，避免意外修改数据。
 
 ### 配置示例
 
@@ -363,7 +369,7 @@ MCP (Model Context Protocol) server for [KingBase](https://www.kingbase.com.cn/)
 - 2 resources: database config, server status
 - Two transport modes: stdio (local) and Streamable HTTP (remote)
 - Fine-grained access control: `readonly` / `readwrite` / `full` / `admin`
-- Two-phase confirmation for write operations
+- Secure confirmation for write operations via MCP Elicitation (with two-phase fallback)
 - Auto schema qualification for table names
 - Parameterized queries for safe value substitution
 

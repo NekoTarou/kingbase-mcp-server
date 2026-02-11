@@ -325,24 +325,62 @@ Examples:
     let sql = params.sql;
     sql = qualifyTableNames(sql, schema);
 
-    // Confirmation check
-    if (!params.confirmed) {
-      return {
-        content: [{
-          type: "text" as const,
-          text: [
-            `⚠️ Confirmation required for ${dmlType} operation.`,
-            "",
-            "SQL statement to execute:",
-            "```sql",
-            sql,
-            "```",
-            params.params ? `Parameters: ${JSON.stringify(params.params)}` : "",
-            "",
-            "Please call this tool again with `confirmed: true` to execute.",
-          ].filter(Boolean).join("\n"),
-        }],
-      };
+    // Confirmation check — prefer elicitation (blocks until user responds),
+    // fall back to the legacy `confirmed` parameter when the client does not
+    // support elicitation.
+    const clientCaps = server.server.getClientCapabilities();
+    const supportsElicitation = !!clientCaps?.elicitation;
+
+    if (supportsElicitation) {
+      const elicitResult = await server.server.elicitInput({
+        message: [
+          `⚠️ Confirmation required for ${dmlType} operation.`,
+          "",
+          "SQL statement to execute:",
+          "```sql",
+          sql,
+          "```",
+          params.params ? `Parameters: ${JSON.stringify(params.params)}` : "",
+        ].filter(Boolean).join("\n"),
+        requestedSchema: {
+          type: "object" as const,
+          properties: {
+            confirm: {
+              type: "boolean" as const,
+              title: "Confirm execution",
+              description: "Set to true to confirm and execute this operation",
+              default: false,
+            },
+          },
+          required: ["confirm"],
+        },
+      });
+
+      if (elicitResult.action !== "accept" || !elicitResult.content?.confirm) {
+        return {
+          content: [{ type: "text" as const, text: "Operation cancelled by user." }],
+        };
+      }
+    } else {
+      // Legacy fallback: two-call confirmation via `confirmed` parameter
+      if (!params.confirmed) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: [
+              `⚠️ Confirmation required for ${dmlType} operation.`,
+              "",
+              "SQL statement to execute:",
+              "```sql",
+              sql,
+              "```",
+              params.params ? `Parameters: ${JSON.stringify(params.params)}` : "",
+              "",
+              "Please call this tool again with `confirmed: true` to execute.",
+            ].filter(Boolean).join("\n"),
+          }],
+        };
+      }
     }
 
     const result = await executeQuery(sql, params.params ?? undefined);
@@ -433,28 +471,71 @@ Examples:
 
     const dangerous = isDangerousDDL(sql);
 
-    // Confirmation check
-    if (!params.confirmed) {
-      return {
-        content: [{
-          type: "text" as const,
-          text: [
-            dangerous
-              ? "🚨 Confirmation required for DANGEROUS DDL operation (DROP/TRUNCATE/CASCADE)."
-              : "⚠️ Confirmation required for DDL operation.",
-            "",
-            "SQL statement to execute:",
-            "```sql",
-            sql,
-            "```",
-            "",
-            dangerous
-              ? "WARNING: This operation is destructive and CANNOT be undone!"
-              : "",
-            "Please call this tool again with `confirmed: true` to execute.",
-          ].filter(Boolean).join("\n"),
-        }],
-      };
+    // Confirmation check — prefer elicitation, fall back to `confirmed` param
+    const clientCaps = server.server.getClientCapabilities();
+    const supportsElicitation = !!clientCaps?.elicitation;
+
+    if (supportsElicitation) {
+      const elicitResult = await server.server.elicitInput({
+        message: [
+          dangerous
+            ? "🚨 Confirmation required for DANGEROUS DDL operation (DROP/TRUNCATE/CASCADE)."
+            : "⚠️ Confirmation required for DDL operation.",
+          "",
+          "SQL statement to execute:",
+          "```sql",
+          sql,
+          "```",
+          "",
+          dangerous
+            ? "WARNING: This operation is destructive and CANNOT be undone!"
+            : "",
+        ].filter(Boolean).join("\n"),
+        requestedSchema: {
+          type: "object" as const,
+          properties: {
+            confirm: {
+              type: "boolean" as const,
+              title: "Confirm execution",
+              description: dangerous
+                ? "This is a DESTRUCTIVE operation that CANNOT be undone. Set to true to confirm."
+                : "Set to true to confirm and execute this DDL operation",
+              default: false,
+            },
+          },
+          required: ["confirm"],
+        },
+      });
+
+      if (elicitResult.action !== "accept" || !elicitResult.content?.confirm) {
+        return {
+          content: [{ type: "text" as const, text: "Operation cancelled by user." }],
+        };
+      }
+    } else {
+      // Legacy fallback: two-call confirmation via `confirmed` parameter
+      if (!params.confirmed) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: [
+              dangerous
+                ? "🚨 Confirmation required for DANGEROUS DDL operation (DROP/TRUNCATE/CASCADE)."
+                : "⚠️ Confirmation required for DDL operation.",
+              "",
+              "SQL statement to execute:",
+              "```sql",
+              sql,
+              "```",
+              "",
+              dangerous
+                ? "WARNING: This operation is destructive and CANNOT be undone!"
+                : "",
+              "Please call this tool again with `confirmed: true` to execute.",
+            ].filter(Boolean).join("\n"),
+          }],
+        };
+      }
     }
 
     await executeQuery(sql);

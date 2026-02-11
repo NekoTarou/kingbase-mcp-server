@@ -42,7 +42,7 @@ The entire server lives in `src/index.ts` (~1085 lines), organized top-to-bottom
   - `readwrite` — readonly + INSERT/UPDATE via kb_execute
   - `full` — readwrite + DELETE via kb_execute
   - `admin` — full + DDL via kb_execute_ddl
-- DML (`kb_execute`) and DDL (`kb_execute_ddl`) require two-phase confirmation: first call returns a preview, second call with `confirmed: true` executes
+- DML (`kb_execute`) and DDL (`kb_execute_ddl`) use MCP elicitation for user confirmation when the client supports it (protocol-level blocking confirmation dialog); falls back to two-phase `confirmed` parameter for legacy clients
 - Tool input schemas use Zod with `.strict()` to reject extra fields
 - `pg` is imported as a default ESM import (`import pg from "pg"`) then destructured (`const { Pool } = pg`) due to ESM/CJS interop
 - The `schema` parameter on most tools falls back to `getDefaultSchema()` → `DB_SCHEMA` env → `"public"`
@@ -63,6 +63,7 @@ The entire server lives in `src/index.ts` (~1085 lines), organized top-to-bottom
 ### stdio mode (default)
 
 Configure in `~/.claude/settings.json` as an MCP server:
+
 ```json
 {
   "mcpServers": {
@@ -70,8 +71,12 @@ Configure in `~/.claude/settings.json` as an MCP server:
       "command": "node",
       "args": ["<path-to-repo>/dist/index.js"],
       "env": {
-        "DB_HOST": "...", "DB_PORT": "54321", "DB_USER": "system",
-        "DB_PASSWORD": "...", "DB_NAME": "...", "DB_SCHEMA": "public",
+        "DB_HOST": "...",
+        "DB_PORT": "54321",
+        "DB_USER": "system",
+        "DB_PASSWORD": "...",
+        "DB_NAME": "...",
+        "DB_SCHEMA": "public",
         "ACCESS_MODE": "readonly"
       }
     }
@@ -84,6 +89,7 @@ Configure in `~/.claude/settings.json` as an MCP server:
 Start: `TRANSPORT=http MCP_PORT=3000 ACCESS_MODE=readonly DB_HOST=... DB_PASSWORD=... node dist/index.js`
 
 Client config:
+
 ```json
 {
   "mcpServers": {
