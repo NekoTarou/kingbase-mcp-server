@@ -265,10 +265,6 @@ const ExecuteInputSchema = z
       .array(z.union([z.string(), z.number(), z.boolean(), z.null()]))
       .optional()
       .describe("Optional parameterized query values ($1, $2, ...)"),
-    confirmed: z
-      .boolean()
-      .default(false)
-      .describe("Set to true to confirm execution. First call without this returns a preview for confirmation."),
     schema: z
       .string()
       .optional()
@@ -325,13 +321,10 @@ Examples:
     let sql = params.sql;
     sql = qualifyTableNames(sql, schema);
 
-    // Confirmation check — prefer elicitation (blocks until user responds),
-    // fall back to the legacy `confirmed` parameter when the client does not
-    // support elicitation.
-    const clientCaps = server.server.getClientCapabilities();
-    const supportsElicitation = !!clientCaps?.elicitation;
-
-    if (supportsElicitation) {
+    // User confirmation via MCP elicitation — blocks until the user responds.
+    // If the client does not support elicitation, behaviour depends on the
+    // SKIP_CONFIRM environment variable.
+    try {
       const elicitResult = await server.server.elicitInput({
         message: [
           `⚠️ Confirmation required for ${dmlType} operation.`,
@@ -361,26 +354,19 @@ Examples:
           content: [{ type: "text" as const, text: "Operation cancelled by user." }],
         };
       }
-    } else {
-      // Legacy fallback: two-call confirmation via `confirmed` parameter
-      if (!params.confirmed) {
+    } catch (elicitError) {
+      // Client does not support elicitation
+      const skipConfirm = (process.env.SKIP_CONFIRM || "").toLowerCase() === "true";
+      if (!skipConfirm) {
         return {
+          isError: true,
           content: [{
             type: "text" as const,
-            text: [
-              `⚠️ Confirmation required for ${dmlType} operation.`,
-              "",
-              "SQL statement to execute:",
-              "```sql",
-              sql,
-              "```",
-              params.params ? `Parameters: ${JSON.stringify(params.params)}` : "",
-              "",
-              "Please call this tool again with `confirmed: true` to execute.",
-            ].filter(Boolean).join("\n"),
+            text: "⚠️ User confirmation failed: your MCP client does not support Elicitation.\n\nTo allow write operations without confirmation, set the environment variable SKIP_CONFIRM=true.\n\n⚠️ WARNING: This will skip all confirmation prompts for DML/DDL operations. Use at your own risk.",
           }],
         };
       }
+      // SKIP_CONFIRM=true — proceed without confirmation
     }
 
     const result = await executeQuery(sql, params.params ?? undefined);
@@ -413,10 +399,6 @@ const ExecuteDDLInputSchema = z
       .string()
       .min(1, "DDL statement is required")
       .describe("DDL statement (CREATE/ALTER/DROP/TRUNCATE) to execute"),
-    confirmed: z
-      .boolean()
-      .default(false)
-      .describe("Set to true to confirm execution. First call without this returns a preview for confirmation."),
     schema: z
       .string()
       .optional()
@@ -471,11 +453,8 @@ Examples:
 
     const dangerous = isDangerousDDL(sql);
 
-    // Confirmation check — prefer elicitation, fall back to `confirmed` param
-    const clientCaps = server.server.getClientCapabilities();
-    const supportsElicitation = !!clientCaps?.elicitation;
-
-    if (supportsElicitation) {
+    // User confirmation via MCP elicitation — blocks until the user responds
+    try {
       const elicitResult = await server.server.elicitInput({
         message: [
           dangerous
@@ -512,27 +491,14 @@ Examples:
           content: [{ type: "text" as const, text: "Operation cancelled by user." }],
         };
       }
-    } else {
-      // Legacy fallback: two-call confirmation via `confirmed` parameter
-      if (!params.confirmed) {
+    } catch (elicitError) {
+      const skipConfirm = (process.env.SKIP_CONFIRM || "").toLowerCase() === "true";
+      if (!skipConfirm) {
         return {
+          isError: true,
           content: [{
             type: "text" as const,
-            text: [
-              dangerous
-                ? "🚨 Confirmation required for DANGEROUS DDL operation (DROP/TRUNCATE/CASCADE)."
-                : "⚠️ Confirmation required for DDL operation.",
-              "",
-              "SQL statement to execute:",
-              "```sql",
-              sql,
-              "```",
-              "",
-              dangerous
-                ? "WARNING: This operation is destructive and CANNOT be undone!"
-                : "",
-              "Please call this tool again with `confirmed: true` to execute.",
-            ].filter(Boolean).join("\n"),
+            text: "⚠️ User confirmation failed: your MCP client does not support Elicitation.\n\nTo allow DDL operations without confirmation, set the environment variable SKIP_CONFIRM=true.\n\n⚠️ WARNING: This will skip all confirmation prompts for DML/DDL operations. Use at your own risk.",
           }],
         };
       }

@@ -74,18 +74,19 @@ kingbase-mcp-server
 
 ## 环境变量
 
-| 变量          | 说明                        | 默认值      |
-| ------------- | --------------------------- | ----------- |
-| `DB_HOST`     | 数据库主机                  | `localhost` |
-| `DB_PORT`     | 数据库端口                  | `54321`     |
-| `DB_USER`     | 用户名                      | `system`    |
-| `DB_PASSWORD` | 密码                        | (空)        |
-| `DB_NAME`     | 数据库名                    | `kingbase`  |
-| `DB_SCHEMA`   | 默认 schema                 | `public`    |
-| `TRANSPORT`   | 传输模式：`stdio` 或 `http` | `stdio`     |
-| `MCP_PORT`    | HTTP 模式监听端口           | `3000`      |
-| `MCP_HOST`    | HTTP 模式监听地址           | `0.0.0.0`   |
-| `ACCESS_MODE` | 权限模式（见下方说明）      | `readonly`  |
+| 变量           | 说明                         | 默认值      |
+| -------------- | ---------------------------- | ----------- |
+| `DB_HOST`      | 数据库主机                   | `localhost` |
+| `DB_PORT`      | 数据库端口                   | `54321`     |
+| `DB_USER`      | 用户名                       | `system`    |
+| `DB_PASSWORD`  | 密码                         | (空)        |
+| `DB_NAME`      | 数据库名                     | `kingbase`  |
+| `DB_SCHEMA`    | 默认 schema                  | `public`    |
+| `TRANSPORT`    | 传输模式：`stdio` 或 `http`  | `stdio`     |
+| `MCP_PORT`     | HTTP 模式监听端口            | `3000`      |
+| `MCP_HOST`     | HTTP 模式监听地址            | `0.0.0.0`   |
+| `ACCESS_MODE`  | 权限模式（见下方说明）       | `readonly`  |
+| `SKIP_CONFIRM` | 跳过写操作确认（见下方说明） | `false`     |
 
 ## 权限模式
 
@@ -102,18 +103,15 @@ kingbase-mcp-server
 
 ### 安全确认机制
 
-`kb_execute`（DML）和 `kb_execute_ddl`（DDL）工具内置安全确认机制，确保写操作必须经过用户明确确认：
+`kb_execute`（DML）和 `kb_execute_ddl`（DDL）工具使用 MCP [Elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation) 机制进行用户确认：
 
-#### 方式一：MCP Elicitation（推荐）
+- 当工具被调用时，服务端通过 elicitation 在协议层面**阻塞等待用户确认**
+- 客户端会弹出确认对话框，用户必须明确点击确认/拒绝后操作才会继续
+- AI 助手无法绕过此确认流程，确保数据安全
 
-当 MCP 客户端支持 [Elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation) 时，服务端会在协议层面**阻塞等待用户确认**——客户端弹出确认对话框，用户必须明确点击确认/拒绝后操作才会继续，AI 助手无法绕过此确认流程。
-
-#### 方式二：两步确认（回退方案）
-
-当客户端不支持 Elicitation 时，自动回退到参数确认方式：
-
-1. **首次调用**（不传 `confirmed` 或 `confirmed: false`）→ 不执行 SQL，返回操作预览和确认提示
-2. **确认调用**（`confirmed: true`）→ 真正执行 SQL
+> ⚠️ **客户端不支持 Elicitation 时**：如果你的 MCP 客户端不支持 Elicitation（如旧版本客户端），写操作将**默认拒绝执行**并提示错误。如果你了解风险并希望跳过确认，可以设置环境变量 `SKIP_CONFIRM=true`。
+>
+> **⚠️ 警告：设置 `SKIP_CONFIRM=true` 将跳过所有 DML/DDL 操作的用户确认，AI 助手将直接执行写操作，请自行承担风险！**
 
 ### 配置示例
 

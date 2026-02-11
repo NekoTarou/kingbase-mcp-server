@@ -42,7 +42,7 @@ The entire server lives in `src/index.ts` (~1085 lines), organized top-to-bottom
   - `readwrite` — readonly + INSERT/UPDATE via kb_execute
   - `full` — readwrite + DELETE via kb_execute
   - `admin` — full + DDL via kb_execute_ddl
-- DML (`kb_execute`) and DDL (`kb_execute_ddl`) use MCP elicitation for user confirmation when the client supports it (protocol-level blocking confirmation dialog); falls back to two-phase `confirmed` parameter for legacy clients
+- DML (`kb_execute`) and DDL (`kb_execute_ddl`) use MCP elicitation for mandatory user confirmation before execution; if the client does not support elicitation, set `SKIP_CONFIRM=true` to skip confirmation (use at your own risk)
 - Tool input schemas use Zod with `.strict()` to reject extra fields
 - `pg` is imported as a default ESM import (`import pg from "pg"`) then destructured (`const { Pool } = pg`) due to ESM/CJS interop
 - The `schema` parameter on most tools falls back to `getDefaultSchema()` → `DB_SCHEMA` env → `"public"`
